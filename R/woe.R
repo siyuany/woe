@@ -13,9 +13,9 @@
 #' @param Continuous : True if the variable is continuous, False if variable is Ordinal or Nominal
 #' @param Dependent : Name of the Targer Variable
 #' @param C_Bin : Count of Bins to be computed
-#' @param Good : Which categorical variable do you want to be good
-#' @param Bad : Which categorical variable do you want to be bad
-#' @return Returns a DataSet with computed WoE and IV values on success or 0 on Failure
+#' @param Good : Which categorical variable value do you want to be good, deprecated
+#' @param Bad : Which categorical variable value do you want to be bad
+#' @return Returns a DataSet with computed WoE and IV values on success or 0 on failure
 #' @note
 #' "woe" shows the log-odds ratio between between Goods and Bads.
 #' In the Bivalued Dependenet variable, one value represents Goods and others are bads.
@@ -26,6 +26,7 @@
 #' Then good would be 1 and bad=0.
 #' If I wish to check WOE and IV of Tenure with ATTRITED to know if Tenure has an effect in not getting attrited,
 #' Then good would be 0 and bad=1.
+#' Now you just need to tell what is bad, and ignore the parameter Good.
 #' @examples
 #' woe(Data=mtcars,"cyl",FALSE,"am",10,Bad=0,Good=1)
 #' woe(Data=mtcars,"mpg",TRUE,"am",10,Bad=0,Good=1)
@@ -33,74 +34,49 @@
 #' @export
 
 
-woe<-function(Data,Independent,Continuous,Dependent,C_Bin,Bad,Good)
+woe <- function(Data, Independent, Continuous, Dependent, C_Bin, Bad, Good = NA)
 {
-  continuous=Continuous
-  C_Bin=C_Bin-1
-  success<-0
-  success2<-0
-  j=0
-  for(i in 1:ncol(Data))
+  continuous <- Continuous
+  C_Bin <- C_Bin - 1
+  
+  # check whether Dependent and Independent are columns in Data
+  dp_check <- Dependent %in% colnames(Data)
+  idp_check <- Independent %in% colnames(Data)
+  
+  if (!dp_check & !idp_check)
+    stop(paste("Variables",Independent,",",Dependent,"are missing in Data set "))
+  if (!dp_check)
+    stop(paste("Variable",Dependent,"is missing in Data set "))
+  if (!idp_check)
+    (paste("Variable",Independent,"is missing in Data set "))
+  
+
+  CNO_Target <- which(Dependent == colnames(Data))
+  Ind <- which(Independent == colnames(Data))
+  Data[, CNO_Target] <- ifelse(Data[, CNO_Target] == Bad, 0, 1)
+
+  if(Continuous==TRUE)
   {
-    if(colnames(Data[i])==Dependent)
-    {
-      j=i
-      success<-1
-      break
-    }
-
-  }
-
-  for(Ind in 1:ncol(Data))
-  {
-    if(colnames(Data[Ind])==Independent)
-    {
-      j=Ind
-      success2<-1
-      break
-    }
-
-  }
-  Ind<-j
-  if(success==1 & success2==1)
-  {
-    CNO_Target=i
-    Data[which(Data[,CNO_Target]==Bad),CNO_Target]=0
-    Data[which(Data[,CNO_Target]==Good),CNO_Target]=1
-
-    if(Continuous==TRUE)
-    {
-      BIN<-.sub_woe(Data,Ind,CNO_Target,C_Bin)
-      colnames(BIN)<-c("BIN","MIN","MAX","GOOD","BAD","TOTAL","BAD%","GOOD%","TOTAL%","WOE","IV","BAD_SPLIT","GOOD_SPLIT")
-      BIN<-BIN[,c(1,2,3,5,4,6,7,8,9,10,11,12,13)]
-    }
-    else
-    {
-      BIN<-.sub_woe_ON(Data,Ind,CNO_Target,C_Bin)
-      colnames(BIN)<-c("BIN","BAD","GOOD","TOTAL","BAD%","GOOD%","TOTAL%","WOE","IV","BAD_SPLIT","GOOD_SPLIT")
-    }
-    return(BIN)
+    BIN<-.sub_woe(Data, Ind, CNO_Target, C_Bin)
+    colnames(BIN)<-c("BIN","MIN","MAX","GOOD","BAD","TOTAL","BAD%","GOOD%","TOTAL%","WOE","IV","BAD_SPLIT","GOOD_SPLIT")
+    BIN<-BIN[,c(1,2,3,5,4,6,7,8,9,10,11,12,13)]
   }
   else
   {
-    if(success==0)
-    {
-      print(paste("Variable",Dependent,"is missing in Data set "))
-    }
-    if(success2==0)
-    {
-      print(paste("Variable",Independent,"is missing in Data set "))
-    }
-    if(success==0 & success2==0)
-    {
-      print(paste("Variables",Independent,",",Dependent,"are missing in Data set "))
-    }
-
-    return(0)
+    BIN<-.sub_woe_ON(Data,Ind,CNO_Target,C_Bin)
+    colnames(BIN)<-c("BIN","BAD","GOOD","TOTAL","BAD%","GOOD%","TOTAL%","WOE","IV","BAD_SPLIT","GOOD_SPLIT")
   }
-
+  
+  iv <- sum(BIN$IV)
+  attr(BIN, 'IV') <- iv
+  class(BIN) <- c('woe', class(BIN))
+  return(BIN)
 }
 
+print.woe <- function(woe.obj) {
+  NextMethod(woe.obj)
+  cat(paste('\nInformation value:', attr(woe.obj, 'IV')))
+}
 
 .sub_woe<-function(Data,CNO_Continuous,CNO_Target,C_Bin){
   DataSet<-data.frame(matrix(ncol=3,nrow=nrow(Data)))
