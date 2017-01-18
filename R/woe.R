@@ -15,7 +15,7 @@
 #' @param C_Bin : Count of Bins to be computed
 #' @param Good : Which categorical variable value do you want to be good, deprecated
 #' @param Bad : Which categorical variable value do you want to be bad
-#' @return Returns a DataSet with computed WoE and IV values on success or 0 on failure
+#' @return Returns a DataSet with computed WoE and IV values
 #' @note
 #' "woe" shows the log-odds ratio between between Goods and Bads.
 #' In the Bivalued Dependenet variable, one value represents Goods and others are bads.
@@ -42,13 +42,15 @@ woe <- function(Data, Independent, Continuous, Dependent, C_Bin, Bad, Good = NA)
   # check whether Dependent and Independent are columns in Data
   dp_check <- Dependent %in% colnames(Data)
   idp_check <- Independent %in% colnames(Data)
+  print(dp_check)
+  print(idp_check)
   
   if (!dp_check & !idp_check)
     stop(paste("Variables",Independent,",",Dependent,"are missing in Data set "))
   if (!dp_check)
     stop(paste("Variable",Dependent,"is missing in Data set "))
   if (!idp_check)
-    (paste("Variable",Independent,"is missing in Data set "))
+    stop(paste("Variable",Independent,"is missing in Data set "))
   
 
   CNO_Target <- which(Dependent == colnames(Data))
@@ -73,6 +75,10 @@ woe <- function(Data, Independent, Continuous, Dependent, C_Bin, Bad, Good = NA)
   return(BIN)
 }
 
+#' @name woe
+#' @param woe.obj : A woe object
+#' 
+#' @export
 print.woe <- function(woe.obj) {
   NextMethod(woe.obj)
   cat(paste('\nInformation value:', attr(woe.obj, 'IV')))
