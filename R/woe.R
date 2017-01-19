@@ -42,8 +42,8 @@ woe <- function(Data, Independent, Continuous, Dependent, C_Bin, Bad, Good = NA)
   # check whether Dependent and Independent are columns in Data
   dp_check <- Dependent %in% colnames(Data)
   idp_check <- Independent %in% colnames(Data)
-  print(dp_check)
-  print(idp_check)
+  # print(dp_check)
+  # print(idp_check)
   
   if (!dp_check & !idp_check)
     stop(paste("Variables",Independent,",",Dependent,"are missing in Data set "))
@@ -81,7 +81,7 @@ woe <- function(Data, Independent, Continuous, Dependent, C_Bin, Bad, Good = NA)
 #' @export
 print.woe <- function(woe.obj) {
   NextMethod(woe.obj)
-  cat(paste('\nInformation value:', attr(woe.obj, 'IV')))
+  cat(paste('\nInformation value:', attr(woe.obj, 'IV'), '\n'))
 }
 
 .sub_woe<-function(Data,CNO_Continuous,CNO_Target,C_Bin){
